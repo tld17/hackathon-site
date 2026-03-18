@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宮大生による宮崎ガチ推し飲食店 - 決定版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        body { font-family: 'Noto+Sans+JP', sans-serif; background-color: #f4f4f9; }
+        
+        /* カード全体の挙動 */
+        .spot-card { transition: transform 0.2s; cursor: pointer; }
+        .spot-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* --- ★画像スライドショーのカスタムCSS --- */
+        .slideshow-container {
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slideshow-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            animation: crossFade 15s infinite;
+        }
+
+        /* 5枚ある場合の基本アニメーション */
+        .slideshow-container img:nth-child(1) { animation-delay: 0s; }
+        .slideshow-container img:nth-child(2) { animation-delay: 3s; }
+        .slideshow-container img:nth-child(3) { animation-delay: 6s; }
+        .slideshow-container img:nth-child(4) { animation-delay: 9s; }
+        .slideshow-container img:nth-child(5) { animation-delay: 12s; }
+
+        @keyframes crossFade {
+            0%   { opacity: 0; }
+            5%   { opacity: 1; }
+            20%  { opacity: 1; }
+            25%  { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* --- ★スポット用の固定画像コンテナ --- */
+        .static-container {
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .static-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .genre-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .shop-name-text {
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-content { animation: fadeIn 0.3s ease-out forwards; }
+        
+        .comment-highlight { background-color: #e5e7eb; padding: 4px 6px; border-radius: 4px; line-height: 1.6; }
+        
+        /* タブデザイン */
+        .tab-btn {
+            font-weight: bold;
+            padding: 8px 24px;
+            border-bottom: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .tab-active {
+            border-bottom: 4px solid white;
+            color: white;
+        }
+        
+        /* ★横スクロールバーを分かりやすく表示する設定 */
+        .custom-scrollbar {
+            overflow-x: auto;
+            scrollbar-width: auto;
+            scrollbar-color: #9ca3af #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            display: block;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 10px;
+            border: 2px solid #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-blue-500 text-white py-8 px-4 text-center shadow-md">
+        <h1 class="text-3xl md:text-4xl font-bold">宮大生の奇妙な日常</h1>
+
+        <p class="mt-2 text-sm md:text-base opacity-90">
+            我が心と行動に一点の曇りなし………!全てが『正義』だ
+        </p>
+        <div class="mt-6 flex justify-center gap-6 text-lg max-w-xl mx-auto border-b border-orange-400">
+            <button id="tab-food" class="tab-btn tab-active text-white" onclick="switchTab('food')">飲食編</button>
+            <button id="tab-spot" class="tab-btn text-orange-200 hover:text-white" onclick="switchTab('spot')">スポット編</button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6" id="main-content">
+        </main>
+
+    <div id="spot-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-center items-center p-4">
+        <div class="modal-content bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-3 right-3 bg-red-500 text-white w-8 h-8 rounded-full font-bold hover:bg-red-600 z-10 flex items-center justify-center">✕</button>
+            
+            <div class="p-6">
+                <div class="mb-3">
+                    <span id="modal-area" class="text-sm font-semibold px-3 py-1 rounded border"></span>
+                </div>
+                
+                <h2 id="modal-title" class="text-3xl font-bold mb-4 text-gray-800 border-b-2 border-gray-200 pb-2"></h2>
+                
+                <img id="modal-exterior" src="" class="w-full aspect-[4/3] object-cover rounded-lg mb-4 border border-gray-200" alt="外観写真">
+
+                <div id="modal-images-container" class="flex gap-3 overflow-x-auto pb-4 mb-4 snap-x snap-mandatory custom-scrollbar">
+                    </div>
+
+                <p class="text-gray-700 mb-4 bg-gray-100 p-4 rounded-lg font-bold" id="modal-comment"></p>
+                
+                <p class="text-gray-800 mb-6 leading-relaxed whitespace-pre-line" id="modal-detail-comment"></p>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                    <h3 class="font-bold text-gray-800 border-b border-gray-300 pb-1 mb-3">店舗情報</h3>
+                    
+                    <div id="single-location-info">
+                        <ul class="text-sm text-gray-700 space-y-2">
+                            <li><strong>🕒 営業時間:</strong> <span id="modal-hours"></span></li>
+                            <li><strong>📅 定休日:</strong> <span id="modal-closed"></span></li>
+                            <li><strong>📞 連絡先:</strong> <span id="modal-phone"></span></li>
+                        </ul>
+                        <a id="modal-map-link" href="#" target="_blank" class="block w-full text-center bg-blue-500 text-white py-3 mt-4 rounded-lg font-bold hover:bg-blue-600 transition">
+                            Google MAPで開く
+                        </a>
+                    </div>
+
+                    <div id="multi-location-info" class="hidden space-y-4">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const genreStyles = {
+            udon: { bar: "bg-blue-500", headerBar: "bg-blue-500" },
+            ramen: { bar: "bg-red-500", headerBar: "bg-red-500" },
+            teishoku: { bar: "bg-orange-500", headerBar: "bg-orange-500" },
+            survival: { bar: "bg-yellow-400", headerBar: "bg-yellow-500" },
+            world: { bar: "bg-purple-500", headerBar: "bg-purple-500" },
+            dessert: { bar: "bg-pink-500", headerBar: "bg-pink-500" },
+            enkai: { bar: "bg-indigo-500", headerBar: "bg-indigo-500" },
+            shop: { bar: "bg-gray-700", headerBar: "bg-gray-700" },
+            play: { bar: "bg-green-500", headerBar: "bg-green-500" },
+            sight: { bar: "bg-teal-500", headerBar: "bg-teal-500" }
+        };
+
+        function getAreaStyle(area) {
+            if (area.includes('木花') || area.includes('大学内')) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+            if (area.includes('清武')) return "bg-red-100 text-red-800 border-red-200";
+            if (area.includes('加納')) return "bg-orange-100 text-orange-800 border-orange-200";
+            if (area.includes('宮崎駅') || area.includes('橘通り') || area.includes('錦本町')) return "bg-purple-100 text-purple-800 border-purple-200";
+            if (area.includes('本郷') || area.includes('赤江') || area.includes('恒久')) return "bg-green-100 text-green-800 border-green-200";
+            if (area.includes('高鍋') || area.includes('都農') || area.includes('串間')) return "bg-indigo-100 text-indigo-800 border-indigo-200";
+            if (area.includes('宮崎市')) return "bg-blue-100 text-blue-800 border-blue-200";
+            return "bg-gray-100 text-gray-800 border-gray-200";
+        }
+
+        // ==========================================
+        // ★データ群
+        // ==========================================
+        const foodShops = [
+            { 
+                genre: "udon", name: "豊玉うどん", area: "高鍋", 
+                comment:"うどん大好きおじさんが、宮崎で一番おいしいかもしれないと思う少々辺境にある高鍋のお店。", 
+                detailComment: "高鍋町の「釜揚げうどん 豊宝（とよとみ）」は、一軒家のような外観からは想像できない絶品うどんが楽しめる名店。高鍋でうどんのお店を探し、たまたま近くにあったために来店。職人が注文毎に仕上げる「切り立て・茹でたて」の細麺は喉越しが良く、出汁の旨味も秀逸。釜揚げや肉うどんなどメニューも豊富で、サイドの炙り鯖寿司もおいしい。大学からは距離があるが、安価で宮崎トップクラスの味を堪能できるため、うどん通が遠出してでも通いたくなる魅力がある。とよとみって読むんだ。ずっととよたまなのかと思ってた...。",
+                exteriorImage: "images/toyotama6.jpg", 
+                hours: "11:00～15:00", closed: "木曜日", phone: "0983-22-1200",
+                images: [ "images/toyotama1.jpg", "images/toyotama2.jpg", "images/toyotama3.jpg", "images/toyotama4.jpg", "images/toyotama5.jpg" ]
+            },
+            { 
+                genre: "udon", name: "天照うどん", area: "清武", 
+                comment: "パチンコ店の隣にある、老夫婦の営むうどんのお店。", 
+                detailComment: "清武のパチンコ店隣に位置する「天照(てんしょう)うどん」は、場所の先入観を覆す出汁のお店。だしは香りが良くて、深いうまみがある。柔らかい麺が出汁をよく吸い、うどん大好きおじさんが通いたくなる仕上がり。メニューは全体的に安価であり、看板メニューの「天照うどん」は具沢山で満足度も高く、鍋焼きうどんなどもある。おじさんは肉うどん一択だけど。天照うどんのことを「あまてらすうどん」と注文し、店員のおばあさんに「てんしょう」と訂正された。いや宮崎的にアマテラスかと思うじゃん。ナルト読んでるし。", 
+                exteriorImage: "images/30418_0.jpg", 
+                hours: "11:00～15:00", closed: "月曜日", phone: "要確認",
+                images: [ "images/30420_0.jpg", "images/30419_0.jpg", "images/30417_0.jpg", "images/30415_0.jpg", "images/30416_0.jpg" ]
+            },
+            { 
+                genre: "udon", name: "神宮屋 勘助", area: "宮崎市", 
+                comment: "宮崎唯一の豊前裏打会", 
+                detailComment: "作成者が福岡県出身で、豊前裏打会のうどんが大好物のため、宮崎にもないかと探して発見したお店。器を豪快に跨ぐ巨大な「ごぼう天」が目を引くが、特筆すべきは独創的な麺の食感。裏打会らしい独自の製法による「もっちりとした粘り」が同居している。香り高い出汁に揚げたての天ぷらが溶け出し、最後の一滴まで飽きさせない。うどん好きなら一度は啜っておくべき。出汁のうどんだけでなく、ぶっかけうどんも種類が豊富でおススメ。", 
+                exteriorImage: "images/30409_0.jpg", 
+                hours: "11:00～15:00, 17:30～20:00", closed: "不定休", phone: "0985-64-9844",
+                images: [ "images/30414_0.jpg", "images/30413_0.jpg", "images/30412_0.jpg", "images/30411_0.jpg", "images/30410_0.jpg" ]
+            },
+            { 
+                genre: "udon", name: "釜揚げうどん 戸隠", area: "橘通り", 
+                comment: "飲んだ後の胃に優しい〆の釜揚げうどんのお店", 
+                detailComment: "宮崎の夜の象徴、橘通りから一歩入った中央通に店を構える「戸隠」。創業以来、飲んだ後の「シメ」として愛され続けるその一杯は、宮崎の食文化そのものらしい。柚子の香りがふわりと漂う生姜の効いた甘めのつゆに、喉越しの良い極細の麺が絡み、酔い客の胃袋を優しく包み込んでくれる。営業時間が19時から深夜の2時までと夜遅くまで営業してくれるのも魅力。だがしかし。大学生は終電が22時半で終わる呪縛にかかっているため、微妙に行きづらいのが玉に瑕。", 
+                exteriorImage: "images/30408_0.jpg", 
+                hours: "19:00～翌2:00", closed: "日曜日", phone: "0985-24-6864",
+                images: [ "images/30407_0.jpg", "images/30406_0.jpg", "images/30405_0.jpg", "images/30404_0.jpg", "images/30403_0.jpg" ]
+            },
+            { 
+                genre: "udon", name: "麺処 どなん 本郷", area: "本郷", 
+                comment: "うどん大好きおじさんである作成者が好きなうどんやの一つ。", 
+                detailComment: "宮崎市本郷、空港近くの通りに面した「麺処 どなん」。朝6時から暖簾を掲げ、早朝から働く人々の胃袋を満たしている。特徴は、宮崎らしい「柔らかさ」の中に確かなコシを感じる自家製麺と、煮干しや昆布の旨味が凝縮されたの出汁。具材が染み出す天ぷらうどんの満足度は高く、セルフスタイルならではの気軽さと活気が心地よい。福岡県民のおじさん的には「牧のうどん」うっすら感じる。", 
+                exteriorImage: "images/30402_0.jpg", 
+                hours: "10:30～14:30", closed: "木曜日", phone: "要確認",
+                images: [ "images/30401_0.jpg", "images/30400_0.jpg", "images/30399_0.jpg", "images/30398_0.jpg", "images/30397_0.jpg" ]
+            },
+            { 
+                genre: "udon", name: "めん処 たか屋 清武店", area: "清武", 
+                comment: "夜9時以降も営業している宮大生いきつけ。", 
+                detailComment: "清武のクロスモール近くに構える「たか屋」は、学生から家族連れまで、飢えた胃袋を裏切らないコスパの聖地。宮崎らしい柔らさと、程よいコシを両立させた喉越しの良い麺が特徴だ。甘めの出汁が効いたうどんはもちろん、丼ものや「かしわ飯」とのセットメニューが充実しており、ボリューム満点の定食も嬉しい。通し営業のため、遅めの昼食でも温かく迎えてくれる。日常に寄り添うその一杯は、清武エリアで安くて旨いものを語る上で欠かせない。宮大周辺はだいたい9時に閉まるため、バイトや部活終わりに迎えるのがありがたい。最近値段上がってて残念。", 
+                exteriorImage: "images/30390_0.jpg", 
+                hours: "11:00～21:30", closed: "元日", phone: "0985-85-8020",
+                images: [ "images/30389_0.jpg", "images/30387_0.jpg", "images/30386_0.jpg", "images/30385_0.jpg", "images/30388_0.jpg" ]
+            },
+            { 
+                genre: "udon", name: "丸亀製麺宮崎", area: "宮崎市", 
+                comment: "コシのあるうどんもやっぱりおいしい。毎月1日に釜揚げうどんが半額になるため凸る。", 
+                detailComment: "大学から一番近い丸亀製麺。なお車で1時間程度の模様。遠い。宮崎県はうどん県のため、うどんのお店は他にもいっぱいあるが、讃岐の強いコシのあるうどんもやっぱりおいしいということ。毎月1日に釜揚げうどんが半額になるため、面子を募って凸るとよい。", 
+                exteriorImage: "images/30396_0.jpg", 
+                hours: "10:30～22:00", closed: "無休", phone: "0985-22-2622",
+                images: [ "images/30395_0.jpg", "images/30394_0.jpg", "images/30392_0.jpg", "images/30391_0.jpg", "images/30393_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "噛まずに啜れ", area: "清武周辺", 
+                comment: "宮大から一番近い二郎インスパイア。中毒者多数。", 
+                detailComment: "清武町加納に店を構える「噛まずに啜れ」は、その名の通り豪快な啜り心地が身上の二郎インスパイア系のお店。器を覆い尽くす野菜の山と、存在感のある極太麺、パンチの効いたスープがジャンキーな中毒性を生む。麺の量や、油、野菜の量が選べるため、女性にも通いやすい。清武エリアで満腹のその先を目指すなら、避けては通れない一杯。多数の中毒者を大学から生み出しており、作成者の先輩も犠牲に。妊婦さんのようなお腹になってしまっていた。ラーメン以外にもまぜそばも好評。", 
+                exteriorImage: "images/30384_0.jpg", 
+                hours: "11:00～14:00, 18:00～21:00", closed: "不定休", phone: "非公開",
+                images: [ "images/30383_0.jpg", "images/30382_0.jpg", "images/30381_0.jpg", "images/30380_0.jpg", "images/30379_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "豚の恩返し", area: "宮崎市", 
+                comment: "宮崎で珍しい佐賀ラーメンのお店。濃厚なスープがおいしい。", 
+                detailComment: "南方駅のほど近く、JAの敷地内に店を構える「豚の恩返し」は、店名に込められた感謝の心が味に宿る豚骨ラーメンの専門店。久留米発祥の「呼び戻し製法」を受け継ぎ、継ぎ足し続けられたスープは、濃厚なコクがありながらも後味は驚くほど軽やか。有明産の最高級海苔が溶け出す一杯は、磯の香りと豚骨の旨味が絶妙な調和を見せる。福岡県民のおじさんはもちろんラーメンが好きなわけだが、その中でも長浜の細麺く硬い麺を好むため、このお店は最高。スープも濃厚で麺によく絡みとてもうまい。宮崎では一番好きかもしれない。ただ、営業時間的に授業後の夕方に通えないのが悲しいところ。", 
+                exteriorImage: "images/30378_0.jpg", 
+                hours: "11:00～16:00", closed: "水曜日", phone: "要確認",
+                images: [ "images/30377_0.jpg", "images/30376_0.jpg", "images/30374_0.jpg", "images/30375_0.jpg", "images/30373_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "らーめん 椛［MOMIJI］", area: "清武", 
+                comment: "普通のラーメンよりマニア向けのつけ麺の方が好き。大盛無料なのもよい。", 
+                detailComment: "清武町加納、国道沿いで行列を絶やさない「らーめん 椛」。名店「風来軒」の DNA を受け継ぎつつ、独自の進化を遂げた濃厚豚骨の傑作だ。特筆すべきは、骨の真髄まで炊き出したかのような、ポタージュを思わせるクリーミーなスープ。雑味のない凝縮された旨味が、特製の麺にこれでもかと絡みつく。重厚ながらも気品を感じさせる一杯は、清武エリアで究極の濃厚さを求めるなら、必ずや訪れるべき聖地といえる。ラーメン以外にも、油そば、つけ麺がおすすめ。自分はマニア向け魚介つけ麵が一番おいしいと思う。大盛無料だが覚悟が必要。土日はあっさりベースの早朝のみに出す朝ラーをやっているらしいが、朝に起きることが出来ないためいつか行きたいと思って3年。", 
+                exteriorImage: "images/30372_0.jpg", 
+                hours: "11:00～15:00, 18:00～21:00", closed: "不定休", phone: "0985-55-4848",
+                images: [ "images/30371_0.jpg", "images/30370_0.jpg", "images/30369_0.jpg", "images/30368_0.jpg", "images/30367_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "風来軒 加納本店", area: "加納", 
+                comment: "宮崎のラーメンと言えば風来軒。", 
+                detailComment: "宮崎における濃厚豚骨の代名詞とも言える「風来軒」。その総本山である加納本店は、豚骨の旨味を極限まで引き出したドロ系のスープが、全国の愛好家を引き寄せる。麺に絡みつく濃厚なスープは、それでいて雑味がなく、最後の一滴まで職人の矜持を感じさせる。自家製の極細麺とスープの相性は抜群で、替え玉をせずにはいられない。学生から家族連れまで多くの人が、魂の籠もった一杯を求めて暖簾をくぐる。実は宮崎大学のすぐ近くに木花台店があるのだが、大学の先輩たちはみな本店の方がうまいと、わざわざ車を出す。ただ自分も実際本店で食べるとうまいなぁと感じるので、結局自分も本店ばかり行っている。実際に比べてみないと分からないが、プラシーボ効果だろうか...。", 
+                exteriorImage: "images/30366_0.jpg", 
+                hours: "11:00～22:00", closed: "元日のみ", phone: "0985-84-1620",
+                images: [ "images/30365_0.jpg", "images/30364_0.jpg", "images/30363_0.jpg", "images/30362_0.jpg", "images/30361_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "ＴＯＭＡＴＯ ＲＡＭＥＮ あうわ 本店", area: "清武", 
+                comment: "宮崎といえばトマトラーメン。その二大巨頭の一角。", 
+                detailComment: "清武町加納、宮崎のトマトラーメン文化を牽引する「あうわ 本店」。完熟トマトの爽やかな酸味と、豚骨ベースの濃厚なコクが融合したスープは、一口啜ればその完成度に唸らされる。バジルを練り込んだ特製麺がスープをよく拾い、ラーメンの枠に収まらない重層的な旨味を演出。途中で卓上のトマト酢を加えると味がよりさっぱりと変化し、リコピンたっぷりで体にも優しい。残ったスーごはんとチーズを合わせる「リゾット」までが、この店の様式美。斬新ながらも確かな満足感を与える一杯は、是非とも食べてきたい。サイドメニューの餃子も様々な種類があり、とてもおいしい。個人的にはトマトラーメンもおいしいが、本店だけの辛トマトまぜそばがものすごくおいしいのでおススメ。セットで追い飯が付いてくるのもいいところ。こちらも途中でトマト酢を入れることを推奨。また、学生は毎日100円引きかつ、平日は杏仁豆腐かごはんが無料になるので学生に優しい。", 
+                exteriorImage: "images/30360_0.jpg", 
+                hours: "11:00～15:00, 17:30～21:30", closed: "不定休", phone: "0985-33-9385",
+                images: [ "images/30359_0.jpg", "images/30358_0.jpg", "images/30357_0.jpg", "images/30356_0.jpg", "images/30355_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "辛麺屋桝元 赤江店", area: "赤江", 
+                comment: "宮崎と言えば辛麺。辛麺といえば桝元。", 
+                detailComment: "宮崎が生んだソウルフード「辛麺」の代名詞、桝元の赤江店。本郷北方の通り沿いに位置し、広々とした店内で家族連れやグループ客を温かく迎えてくれる。特筆すべきは、唐辛子の刺激とニンニクの旨味が溶け合った秘伝のスープ。選べる辛さと「こんにゃく麺」の独特な弾力が、一度啜れば虜になる中毒性を生み出す。サイドメニューの「トロトロなんこつ」を合わせるのが通の嗜み。赤江の地で、情熱的な一杯を求めるなら迷わずここ。個人的には5辛が値段的にもちょうどいい。", 
+                exteriorImage: "images/30354_0.jpg", 
+                hours: "11:00～22:00", closed: "不定休", phone: "要確認",
+                images: [ "images/30353_0.jpg", "images/30352_0.jpg", "images/30351_0.jpg", "images/30350_0.jpg", "images/30349_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "$nooup®︎加納店", area: "加納", 
+                comment: "トマトラーメン二大巨頭の一角。あっさりスープが細麺によく絡む。", 
+                detailComment: "清武町加納、かつて「麺屋とまと」の名で宮崎に新風を吹き込んだトマトラーメンの旗手。完熟トマトの旨味を凝縮した真紅のスープは、イタリアンとラーメンが見事に融和した独創的な一杯。歯切れの良い細麺がスープをよく持ち上げ、トッピングのチーズが溶け出せばコクはさらに深まる。最後は残ったスープに御飯を投じ、リゾットとして締めるのがこの店の流儀。革新的ながらも、今や清武の地で揺るぎない地位を築いた名店である。ラーメンへのトッピングも様々な種類があり、チーズが一番人気。最近学割が消えていて悲しくなった。", 
+                exteriorImage: "images/30348_0.jpg", 
+                hours: "11:00～21:00", closed: "不定休", phone: "要確認",
+                images: [ "images/30347_0.jpg", "images/30346_0.jpg", "images/30345_0.jpg", "images/30344_0.jpg", "images/30343_0.jpg" ]
+            },
+            { 
+                genre: "ramen", name: "らぁめんちゃーしゅー屋 焱 清武店", area: "清武", 
+                comment: "ボリューミーな豚骨ラーメンのお店。風来軒とは違った美味しさがある。", 
+                detailComment: "清武町加納のバイパス沿い、力強い店名が目を引く「らぁめんちゃーしゅー屋 焱（えん）」。屋号に違わず、特筆すべきはその肉厚でトロトロのチャーシューだ。秘伝のタレが染み込んだチャーシューは、口の中で解けるような食感と濃厚な旨味を放ち、ラーメンの主役として君臨する。鶏ガラと豚骨のダブルスープが麺によく絡み、食欲を刺激する一杯。がっつりと肉を喰らい、活力を漲らせたい時には、ここ清武の地で間違いのない選択といえる。豚骨以外のラーメンも豊富で、サイドメニューも充実。", 
+                exteriorImage: "images/30342_0.jpg", 
+                hours: "11:00～21:00", closed: "要確認", phone: "要確認",
+                images: [ "images/30341_0.jpg", "images/30340_0.jpg", "images/30339_0.jpg", "images/30338_0.jpg", "images/30337_0.jpg" ]
+            },
+            { 
+                genre: "teishoku", name: "おぐら 本店", area: "橘通り", 
+                comment: "宮崎を代表する国民食チキン南蛮の発祥のお店", 
+                detailComment: "宮崎グルメの象徴、チキン南蛮の聖地として知られる「おぐら 本店」。路地裏に佇むその店構えは、昭和の香りを色濃く残す。看板メニューのチキン南蛮は、秘伝の甘酢と山盛りのタルタルソースが絡み合い、一度食べれば忘れられない幸福感をもたらす。県内外から多くの客が訪れるが、グループでの来店も温かく迎えてくれる懐の深さがある。宮崎を語る上で欠かせない、歴史と誇りが詰まった一皿を堪能できる。チキン南蛮以外にもちゃんぽんが有名。ただ少々高価で、宮崎県民は他のお店で十分美味しいからそこまで行かないとのこと。ただ、チキン南蛮のお店でおススメはと聞かれると結局おぐららしい。", 
+                exteriorImage: "images/30336_0.jpg", 
+                hours: "11:00～15:00, 17:00～20:00", closed: "火曜日", phone: "0985-22-2296",
+                images: [ "images/30335_0.jpg", "images/30334_0.jpg", "images/30333_0.jpg", "images/30332_0.jpg", "images/30331_0.jpg" ]
+            },
+            { 
+                genre: "teishoku", name: "平家の郷", area: "宮崎市", 
+                comment: "県民絶賛のお肉を扱うお店。間違いなく宮崎で最もおいしいハンバーグ。", 
+                detailComment: "宮崎が誇る炭焼きハンバーグの老舗「平家の郷」。宮崎和牛100%にこだわり、目の前でジワリと焼き上げられるパフォーマンスは、五感を刺激する至福のひとときだ。溢れ出す肉汁と、炭火の香ばしさが重なり、肉本来の力強い旨味が口いっぱいに広がる。清武から近い南館をはじめ、県内に展開する店舗はどこも活気に満ち、家族や友人と「肉を喰らう」喜びを分かち合うのに最適な場所といえる。作成者の人生の中でもっともおいしいハンバーグ。ハンバーグに合わせる唐辛子味噌が、おかわり自由の白米を加速させる。学生には少々高価だが、ご褒美や両親にせびるのがおすすめ。", 
+                exteriorImage: "images/30330_0.jpg", 
+                images: [ "images/30329_0.jpg", "images/30328_0.jpg", "images/30327_0.jpg", "images/30326_0.jpg", "images/30325_0.jpg" ],
+                locations: [
+                    { name: "宮崎南館", hours: "11:00～21:30", closed: "無休", phone: "要確認", mapQuery: "平家の郷 宮崎南館" },
+                    { name: "アミュプラザ宮崎店", hours: "11:00～21:30", closed: "無休", phone: "要確認", mapQuery: "平家の郷 アミュプラザ宮崎店" }
+                ] 
+            },
+            { 
+                genre: "teishoku", name: "天ぷら家 武蔵野 赤江店", area: "赤江", 
+                comment: "宮崎大学第二の学食とも言える、宮大生御用達の場所。", 
+                detailComment: "赤江の通り沿い、手軽に本格的な天ぷらや、うどんそば、定食を楽しめる「武蔵野」。リーズナブルな価格帯で大盛が無料と学生にとても優しい。サクッとした軽やかな衣を纏った天ぷら、ボリューム満点の定食、香りの良い出汁のうどんなどメニューが多い。広々とした店内は複数人でも利用しやすく、授業後やバイト、部活の後に真っ先に候補に挙がるお店。作成者は上天ざるばかり食べている。定期的に100円キャッシュバック券を配るためさらにお得に。", 
+                exteriorImage: "images/30430_0.jpg", 
+                hours: "11:00～21:00", closed: "不定休", phone: "0985-52-1135",
+                images: [ "images/30431_0.jpg", "images/30429_0.jpg", "images/30432_0.jpg", "images/30433_0.jpg", "images/30434_0.jpg" ]
+            },
+            { 
+                genre: "teishoku", name: "あなたの街の定食屋さん 清武店", area: "清武", 
+                comment: "スポーツ系の学生が通う定食屋", 
+                detailComment: "清武の地に根ざし、その名の通り「街の台所」として愛される定食屋。特筆すべきは、学生や働き盛りの胃袋を支える圧倒的なボリュームとメニューの豊富さ。チキン南蛮や唐揚げといった定番から、家庭的な味付けの煮物まで、どれを選んでも期待を裏切らない安心感がある。活気ある店内は、複数人で訪れても気兼ねなく食事を楽しめる雰囲気があり、清武エリアの日常を支える名店といえる。大盛が無料であるが、かなり覚悟が必要。自分は並で気持ち悪くなった。", 
+                exteriorImage: "images/30324_0.jpg", 
+                hours: "11:00～14:30, 17:30～21:30", closed: "不定休", phone: "要確認",
+                images: [ "images/30323_0.jpg", "images/30322_0.jpg", "images/30321_0.jpg", "images/30320_0.jpg", "images/30319_0.jpg" ]
+            },
+            { 
+                genre: "teishoku", name: "ていしょく うえだ", area: "木花", 
+                comment: "大学最寄りの定食屋。", 
+                detailComment: "学園木花台の住宅街にひっそりと暖簾を掲げる「ていしょく うえだ」。派手さはないが、一品一品に店主の丁寧な仕事が光るお店。非常にボリューミーで、体に染み渡るような優しい味わいが魅力。ごはんやお味噌汁がセルフサービスでおかわり自由なことが魅力であり、価格もリーズナブルだが、営業時間が限られているのが残念なところ。", 
+                exteriorImage: "images/30318_0.jpg", 
+                hours: "11:00～14:00", closed: "日曜日", phone: "要確認",
+                images: [ "images/30317_0.jpg", "images/30316_0.jpg", "images/30315_0.jpg", "images/30314_0.jpg", "images/30313_0.jpg" ]
+            },
+            { 
+                genre: "teishoku", name: "海鮮茶屋 うを佐 宮崎木花店", area: "木花", 
+                comment: "大学に近い日本食系のお店。少しお高いため親が来た時にせびる。", 
+                detailComment: "宮崎市学園木花台に位置する「海鮮茶屋 うを佐 宮崎木花店」は、昭和52年創業の老舗和食店。「日常にごちそうを」をコンセプトに、宮崎・鹿児島の市場から直送される鮮魚や宮崎県産の西岳米など、厳選された地元の食材にこだわっている。メニューは握り寿司や刺身、釜飯、しゃぶしゃぶの食べ放題まで幅広く、個室も完備する。ランチから祝事、宴会まで多目的に利用でき、手頃な価格で本格的な和食を楽しめる名店として、地域で長く親しまれている。学生には高価なので、両親などが来た際にせびるのが吉。", 
+                exteriorImage: "images/30312_0.jpg", 
+                hours: "11:00～21:30", closed: "元日", phone: "要確認",
+                images: [ "images/30311_0.jpg", "images/30310_0.jpg", "images/30309_0.jpg", "images/30308_0.jpg", "images/30307_0.jpg" ]
+            },
+            { 
+                genre: "survival", name: "すき家", area: "複数店舗", 
+                comment: "大学周辺に住む人間が深夜に通える数少ない選択肢", 
+                detailComment: "深夜まで営業している唯一のお店にして、宮大生を支える柱。友人曰く、大盛以降はごはんの量は変わらないから、大盛が無難、メガより並2つの方がコスパがいいらしい。モーニングのまぜのっけ定食がうまい。作成者は2限が空きコマの時よく通っている。友人達が2日、7日でバイトから逃亡しているので働くのは良くないのかもしれない。", 
+                exteriorImage: "images/30306_0.jpg", 
+                images: [ "images/30305_0.jpg", "images/30304_0.jpg", "images/30303_0.jpg", "images/30302_0.jpg", "images/30301_0.jpg" ],
+                locations: [
+                    { name: "宮崎郡司分店", hours: "24時間営業", closed: "無休", phone: "非公開", mapQuery: "すき家 宮崎郡司分店" },
+                    { name: "269号宮崎清武店", hours: "24時間営業", closed: "無休", phone: "非公開", mapQuery: "すき家 269号宮崎清武店" }
+                ] 
+            },
+            { 
+                genre: "survival", name: "マクドナルド", area: "複数店舗", 
+                comment: "夜9時以降も営業する数少ない選択肢。大学最寄りに来ないか？？", 
+                detailComment: "大学生ならもちろんマックへいかなければ。バイトや部活後にいけるのもいい。", 
+                exteriorImage: "images/30300_0.jpg", 
+                images: [ "images/30295_0.jpg", "images/30299_0.jpg", "images/30298_0.jpg", "images/30297_0.jpg", "images/30296_0.jpg" ],
+                locations: [
+                    { name: "清武クロスモール店", hours: "07:00～23:00", closed: "無休", phone: "要確認", mapQuery: "マクドナルド 清武クロスモール店" },
+                    { name: "南宮崎店", hours: "07:00～24:00", closed: "無休", phone: "要確認", mapQuery: "マクドナルド 南宮崎店" }
+                ] 
+            },
+            { 
+                genre: "survival", name: "ジョイフル", area: "複数店舗", 
+                comment: "夜9時以降も営業する数少ない選択肢。", 
+                detailComment: "大学最寄りのジョイフル2つ。夜9時以降の少ない選択肢の一つ。部活終わりなどはこことすき家がまず選択肢に入る。", 
+                exteriorImage: "images/30294_0.jpg", 
+                images: [ "images/30293_0.jpg", "images/30292_0.jpg", "images/30291_0.jpg", "images/30290_0.jpg", "images/30289_0.jpg" ],
+                locations: [
+                    { name: "西清武店", hours: "24時間営業", closed: "無休", phone: "要確認", mapQuery: "ジョイフル 西清武店" },
+                    { name: "宮崎本郷南方店", hours: "24時間営業", closed: "無休", phone: "要確認", mapQuery: "ジョイフル 宮崎本郷南方店" }
+                ] 
+            },
+            { 
+                genre: "survival", name: "宮崎大学生協 木花食堂", area: "大学内", 
+                comment: "大学生の集う場所", 
+                detailComment: "ミールカードという縛りをかけられた学生たちのたまり場。昼は大学が昼休みを1時間にしたため地獄。どこの大学生協の学食と同じ。週によってメニューの当たれは外れが出るのが厳しいところ。一番おいしいのは結局巣ごもりオクラ。", 
+                exteriorImage: "images/30288_0.jpg", 
+                hours: "平日 11:00～19:30", closed: "土日祝", phone: "学内",
+                images: [ "images/30287_0.jpg", "images/30286_0.jpg", "images/30285_0.jpg", "images/30284_0.jpg", "images/30283_0.jpg" ]
+            },
+            { 
+                genre: "survival", name: "松屋 宮崎錦本町店", area: "錦本町", 
+                comment: "大学から一番近い松屋。遠い。", 
+                detailComment: "大学から一番近い松屋。うまトマハンバーグを食べるために向かう。もっと近くに移って欲しい。お味噌汁付いてくるのはやっぱり素晴らしい。", 
+                exteriorImage: "images/30282_0.jpg", 
+                hours: "24時間営業", closed: "無休", phone: "要確認",
+                images: [ "images/30281_0.jpg", "images/30280_0.jpg", "images/30279_0.jpg", "images/30278_0.jpg", "images/30277_0.jpg" ]
+            },
+            { 
+                genre: "survival", name: "モスバーガー宮崎ブルーアイランド店", area: "木花", 
+                comment: "マックはマックで、モスはモスなんだよ。", 
+                detailComment: "大学最寄りのモスバーガー。やはり、モスの方がマックよりおいしいと思うのだが。てりやきバーガーうますぎる。毎回優柔不断な製作者はメニュー選びで悪戦苦闘。", 
+                exteriorImage: "images/30276_0.jpg", 
+                hours: "09:00～22:00", closed: "無休", phone: "要確認",
+                images: [ "images/30275_0.jpg", "images/30274_0.jpg", "images/30273_0.jpg", "images/30272_0.jpg", "images/30271_0.jpg" ]
+            },
+            { 
+                genre: "survival", name: "セブン-イレブン 宮崎学園木花台店", area: "木花", 
+                comment: "私怨たっぷり。", 
+                detailComment: "大学最寄りのセブン。多くの大学生が絞り取られている。粒マスタードのホットドッグ、明太フランス、からあげ棒、ベリーヨーグルトスムージー、とみたシリーズ、白いプリン、白いたい焼き....etc.............。今日も今日とて夜食を求めいざゆかん。", 
+                exteriorImage: "images/30268_0.jpg", 
+                hours: "24時間営業", closed: "無休", phone: "要確認",
+                images: [ "images/30267_0.jpg", "images/30266_0.jpg", ]
+            },
+            { 
+                genre: "world", name: "ハンフククアン", area: "宮崎駅", 
+                comment: "ベトナム料理が大好きな作成者が通うお店。", 
+                detailComment: "「HANH PHUC QUAN（ハン フク クアン）」は、宮崎駅から徒歩圏内の本場ベトナム料理店。ベトナム出身の店主が手掛ける料理は、現地の調味料や県産の食材を使用し、南から北までベトナム各地の家庭の味を忠実に再現しており、宮崎在住のベトナム人も多く通う。看板メニューのフォーやブンチャーに加え、バインミーや生春巻きなどの定番も充実。デザートのぜんざいも好評。店内はベトナムの竹細工が飾られ、異国情緒あふれる空間で手頃に本格派の味を楽しめる名店として親しまれている。", 
+                exteriorImage: "images/30485_0.jpg", 
+                hours: "11:00～22:00", closed: "火曜日", phone: "要確認",
+                images: [ "images/30486_0.jpg", "images/30487_0.jpg", "images/30488_0.jpg", "images/30489_0.jpg","images/30490_0.jpg", ]
+            },
+            { 
+                genre: "world", name: "インド本場カレーラマ清武店", area: "清武", 
+                comment: "大学最寄りの本場のインドカレー。学割ランチがお得。バター系とチーズナンが好み。", 
+                detailComment: "宮崎市清武町に位置する「インド本場カレー ラマ 清武店」は、本場のネパール・インド料理を楽しめる名店。厳選されたスパイスを使用し、じっくり煮込んだコクのあるカレーは、種類も豊富で辛さの調整も細かく指定できる。注文を受けてから炭火のタンドール窯で焼き上げる巨大なナンは、外はカリッと中はモチモチの食感で、食べ応えも抜群。セットメニューやサイドメニューも充実しており、本格的なスパイス料理をリーズナブルに味わえる店として、地元住民や学生からも厚い支持を得ている。スープがセルフサービスで飲み放題。またランチでは学生セットが安価でおススメ。カレーも様々な種類から選べるが作成者はやっぱりバター。", 
+                exteriorImage: "images/30493_0.jpg", 
+                hours: "11:00～15:00, 17:00～22:00", closed: "無休", phone: "要確認",
+                images: [ "images/30491_0.jpg","images/30492_0.jpg",  "images/30494_0.jpg", "images/30495_0.jpg", "images/30496_0.jpg",
+ ]
+            },
+            { 
+                genre: "dessert", name: "九州パンケーキ", area: "宮崎駅", 
+                comment: "しっとり食感のパンケーキのお店", 
+                detailComment: "宮崎市高千穂通に位置する「九州パンケーキカフェ 宮崎本店」は、九州産の穀物100％にこだわったパンケーキを楽しめる名店だ。小麦粉や雑穀など、九州各地から厳選された素材を使用し、乳化剤や香料を使わず仕上げた生地は、独特のモチモチとした食感と豊かな風味が際立っている。パンケーキ以外にも、九州の旬の食材を活かしたトッピングやサイドメニューも充実。店内は木の温もりに包まれた落ち着いた空間で、素材本来の味を大切にした健康的で贅沢なひとときを過ごせる場所として、地元の人々や観光客からも広く親しまれている。", 
+                exteriorImage: "images/30497_0.jpg",
+                hours: "08:00～21:00", closed: "無休", phone: "要確認",
+                images: [ "images/30498_0.jpg", "images/30499_0.jpg", "images/30500_0.jpg", "images/30501_0.jpg","images/30502_0.jpg", ]
+            },
+            { 
+                genre: "dessert", name: "パンケーキの向こう側", area: "宮崎駅", 
+                comment: "ふわふわな食感が特徴のスフレパンケーキのお店。", 
+                detailComment: "宮崎市広島に位置する「パンケーキの向こうがわ」は、宮崎駅からほど近い橘通りエリアにある、ふわふわ食感にこだわったパンケーキの名店。注文を受けてからメレンゲを立てて焼き上げる生地は、口の中でとろけるような軽やかさと濃厚な味わいが両立している。フルーツを贅沢に使ったスイーツ系から、お食事系のパンケーキまでメニューも豊富で、見た目の華やかさも魅力。店内は明るく開放的な雰囲気で、友人同士や家族連れも気軽に立ち寄れる。素材の良さを活かした本格的な一皿を楽しめる場所として、親しまれている。注文から作るため長く待つ必要があるが、その時間に見合う美味しさ。財布に会心の一撃が入るためご褒美に。", 
+                exteriorImage: "images/30503_0.jpg",
+                hours: "11:00～18:00", closed: "木曜日", phone: "要確認",
+                images: [ "images/30504_0.jpg", "images/30505_0.jpg", "images/30506_0.jpg","images/30507_0.jpg", "images/30508_0.jpg", ]
+            },
+            { 
+                genre: "dessert", name: "スターバックス コーヒー", area: "複数店舗", 
+                comment: "やはり学生ならスタバ。", 
+                detailComment: "大学最寄りの恒久店や、宮崎駅に用事があるときはアミュプラザ宮崎店へ。期間限定フラペチーノを吸いに行く。フルーツ果肉が入るやつがやっぱり一番おいしいと思うね。", 
+                exteriorImage: "images/30509_0.jpg", 
+                images: [ "images/30510_0.jpg", "images/30511_0.jpg","images/30512_0.jpg", "images/30513_0.jpg", "images/30514_0.jpg" ],
+                locations: [
+                    { name: "宮崎恒久店", hours: "08:00～23:00", closed: "不定休", phone: "要確認", mapQuery: "スターバックス コーヒー 宮崎恒久店" },
+                    { name: "アミュプラザ宮崎店", hours: "10:00～20:00", closed: "不定休", phone: "要確認", mapQuery: "スターバックス コーヒー アミュプラザ宮崎店" }
+                ]
+            },
+            { 
+                genre: "enkai", name: "食洞空間 和楽 宮崎店", area: "橘通り", 
+                comment: "居酒屋と言えばここ。大学の先輩達が口を揃えて和楽はうまいと言う。", 
+                detailComment: "宫崎市橘通西に位置する「食洞空間 和楽 宮崎店」は、洞窟をイメージした幻想的で落ち着いた個室空間が魅力の居酒屋。宮崎の地鶏や鮮魚、厳選された肉料理など、地産地消にこだわった創作和食を幅広く提供している。完全個室も完備されており、デートや接待、少人数の宴会など、プライベートな時間を大切にしたい場面に最適。こだわりの空間と地元の旬を活かした本格的な味を、手頃な価格で堪能できる隠れ家的な名店。カクテル「好きとキスの合間に」、「三十路の心意気」だったり、デザートに「18禁乳プリン」と独特なものが多い。バイトしている先輩曰く、これを恥ずかしそうに頼むのが一番ダサいとのこと。", 
+                exteriorImage: "images/waraku1.jpg",
+                hours: "17:00～24:00", closed: "不定休", phone: "要確認",
+                images: [ "images/waraku2.jpg","images/waraku3.jpg","images/waraku4.jpg","images/waraku5.jpg","images/waraku6.jpg", ]
+            }
+        ];
+
+        // ==========================================
+        // ★スポット店舗のデータ
+        // ==========================================
+        const spotShops = [
+            { 
+                genre: "play", name: "Billiards&Games POOL", area: "木花", 
+                comment: "大学最寄りのビリヤードのお店", 
+                detailComment: "宮崎市清武町に位置するBilliards&Games POOLは、ビリヤードを楽しめるアミューズメント施設。落ち着いた雰囲気の店内に多数のテーブルを完備しており、初心者から上級者まで集中してプレーできる環境が整っている。深夜まで営業しているため、仕事帰りや友人との集まりなど、時間を気にせずゆっくりと遊べる場所として親しまれている。毎週第2・4水曜日は半額になるためおススメ。", 
+                exteriorImage: "images/pool1.jpg", 
+                hours: "12:00～翌3:00", closed: "無休", phone: "0985-88-3567", mapLink: "https://maps.app.goo.gl/ChIJY9YDbbrJODUR4hLP7HeGz18",
+                images: [ "images/pool2.jpg","images/pool3.jpg", ]
+            },
+            { 
+                genre: "play", name: "ラウンドワンスタジアム 宮崎店", area: "南宮崎", 
+                comment: "学生らしくオールナイトスポッチャ", 
+                detailComment: "南宮崎駅周辺に位置する「ラウンドワンスタジアム 宮崎店」は、ボウリング、カラオケ、アミューズメント、スポッチャまで楽しめる大型複合レジャー施設。最新の機種を揃えたゲームコーナーや、多彩なスポーツを体験できるスポッチャエリアは、友人同士や家族連れで一日中遊べる空間となっている。早朝から深夜まで営業しており、目的や人数に合わせて幅広いアクティビティを選べるのが魅力。地元の学生や大人まで、誰もが気軽にリフレッシュできる人気スポットとして親しまれている。特に深夜は人が少なく、6人以上だと3時間の料金がフリータイムに変わるため、飲み会の後などに向かいオールで遊ぶことができる。", 
+                exteriorImage: "images/30450_0.jpg", 
+                hours: "10:00～翌6:00 (金土・祝前日は24時間営業)", closed: "無休", phone: "0985-63-1210", mapLink: "https://maps.google.com/?cid=4261719550050058740&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [  "images/30451_0.jpg","images/30452_0.jpg", "images/30453_0.jpg","images/supocha.jpg"]
+            },
+            { 
+                genre: "play", name: "カラオケ コロッケ倶楽部 宮崎赤江店", area: "田吉", 
+                comment: "学生に優しいからオケ", 
+                detailComment: "宮崎市大字恒久に位置する「カラオケ コロッケ倶楽部 宮崎赤江店」は、落ち着いた雰囲気の個室を多数完備しており、少人数から大人数の宴会まで、プライベートな空間でゆったりと過ごせ、友人同士や家族連れ、仕事帰りなど、目的に合わせて幅広く利用できる。手頃な価格で歌と食を堪能できる場所として、地域で長く親しまれている。特に学生は夜19時以降フリータイムが1000円台と手軽のため、オールで歌うことが可能。", 
+                exteriorImage: "images/30454_0.jpg", 
+                hours: "10:00～翌5:00 (土曜日は翌6:00まで)", closed: "無休", phone: "0985-63-5667", mapLink: "https://maps.google.com/?cid=11044364543271813699&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: ["images/30455_0.jpg", "images/30456_0.jpg"]
+            },
+            { 
+                genre: "play", name: "極楽湯 宮崎店", area: "宮崎市", 
+                comment: "疲れが取れるスーパー銭湯", 
+                detailComment: "宮崎市柳丸町に位置する「極楽湯 宮崎店」は、多彩なお風呂とサウナを完備した天然温泉施設。露天風呂や炭酸泉、ジェットバスなど、バリエーション豊かな浴槽で日々の疲れを癒やせる。広々としたサウナや水風呂も充実しており、リフレッシュに最適。お食事処やリラクゼーション、漫画コーナーも備え、一人でも家族連れでも一日中ゆっくり過ごせる。手頃な価格で本格的な湯浴みを楽しめる名店として、地域で広く親しまれている。", 
+                exteriorImage: "images/30457_0.jpg", 
+                hours: "9:00～翌1:00 (土日は朝7:00～)", closed: "無休", phone: "0985-61-4126", mapLink: "https://maps.google.com/?cid=39700124243055358&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30458_0.jpg", "images/30459_0.jpg", "images/30460_0.jpg" ]
+            },
+            { 
+                genre: "play", name: "宮崎市自然休養村センター このはなの湯", area: "青島周辺", 
+                comment: "ザ・地元の人間が通う温泉", 
+                detailComment: "宮崎市熊野に位置する「宮崎市自然休養村センター このはなの湯」は、木花エリアののどかな風景に囲まれた天然温泉施設だ。良質なナトリウム塩化物温泉を源泉掛け流しで楽しめ、疲労回復や美肌効果も期待できる。広々とした大浴場やサウナを完備し、心身ともにリフレッシュできる空間が魅力だ。手頃な価格で本格的な湯浴みを堪能できるだけでなく、地元の農産物が並ぶ売店も併設されており、地域住民や観光客に憩いの場として広く親しまれている。1回の料金も400円程度と安価。", 
+                exteriorImage: "images/30461_0.jpg", 
+                hours: "10:00～21:00", closed: "無休", phone: "0985-65-1921", mapLink: "https://maps.google.com/?cid=7217752530441740701&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: ["images/30462_0.jpg", "images/30463_0.jpg", "images/30464_0.jpg","images/onsen.jpg" ]
+            },
+
+            // ========== お店（買い物） ==========
+            { 
+                genre: "shop", name: "ハードオフ 宮崎一の宮店", area: "宮崎市", 
+                comment: "宝探し", 
+                detailComment: "作成者がPCハード好きのため。稀にお宝が発掘される。ドフ巡りはこれだからやめらんねぇ。", 
+                exteriorImage: "images/30421_0.jpg", 
+                hours: "10:00～20:00", closed: "無休", phone: "0985-61-1782", mapLink: "https://maps.google.com/?cid=3800572535742512860&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30422_0.jpg", "images/30423_0.jpg", "images/30424_0.jpg"]
+            },
+            { 
+                genre: "shop", name: "BOOKOFF 宮崎清武店", area: "清武", 
+                comment: "実質教科書販売所", 
+                detailComment: "大学最寄りのブックオフのため、立ち読み以外にも教科書が中古で買える。便利。新学期の強い味方。", 
+                exteriorImage: "images/30425_0.jpg", 
+                hours: "10:00～21:00", closed: "無休", phone: "050-1721-3012", mapLink: "https://maps.google.com/?cid=9014961739947298197&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [  "images/30426_0.jpg", "images/30427_0.jpg", "images/30428_0.jpg" ]
+            },
+            { 
+                genre: "shop", name: "MEGAドン・キホーテ 宮崎橘通店", area: "橘通り", 
+                comment: "宮崎最大のドン・キホーテ", 
+                detailComment: "宮崎市橘通西に位置する「MEGAドン・キホーテ 宮崎橘通店」は、24時間営業で圧倒的な品揃えを誇る総合ディスカウントストア。食料品や日用品から家電、ファッション、ブランド品まで幅広いジャンルの商品が驚きの安さで並んでいる。特に地元の特産品や生鮮食品も充実しており、日常の買い物からお土産探しまで多目的に利用できるのが魅力。中心市街地の利便性の高い場所にあり、深夜や早朝でも手頃な価格で買い物を楽しめる名店として、地域の人々や観光客に広く親しまれている。夜遅くまでやっているドンキのため購入、時間つぶし、駐車場としても便利。飲み会の待ち合わせ場所としてもよく使われる。", 
+                exteriorImage: "images/30435_0.jpg", 
+                hours: "9:00～翌3:00", closed: "無休", phone: "0570-666-809", mapLink: "https://maps.google.com/?cid=14936533887115984633&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [  "images/30436_0.jpg", "images/30437_0.jpg", "images/30438_0.jpg" ]
+            },
+            { 
+                genre: "shop", name: "宮交シティ", area: "南宮崎", 
+                comment: "南宮崎中心地点", 
+                detailComment: "宮崎市大淀に位置する「宮交シティ」は、昭和48年開業の歴史ある大型ショッピングモール。バスターミナルが隣接する交通の要所にあり、スーパーや専門店、多彩な飲食店が揃う利便性の高さが魅力だ。定期的なイベント開催や地域密着型のサービスが充実しており、家族連れから学生、高齢者まで幅広い層が一日中楽しめる空間となっている。手頃な買い物から食事、休憩まで多目的に利用できる名店として、宮崎市民に長く親しまれている。よくある、特に理由もないが向かうショッピングモール。大学から一番近いTSUTAYAなどがある。", 
+                exteriorImage: "images/30439_0.jpg", 
+                hours: "10:00～20:00", closed: "無休", phone: "0985-51-1311", mapLink: "https://maps.google.com/?cid=6979786517012405097&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [  "images/30440_0.jpg", "images/30441_0.jpg", "images/30442_0.jpg"  ]
+            },
+            { 
+                genre: "shop", name: "イオンモール宮崎", area: "宮崎市", 
+                comment: "宮崎最大のイオンモール。", 
+                detailComment: "宮崎市新別府町に位置する「イオンモール宮崎」は、県内最大級の規模を誇る大型ショッピングモールだ。ファッション、雑貨、家電から食料品まで多彩な専門店が揃い、シネマコンプレックスやアミューズメント施設も充実している。開放的なテラス席のある飲食店やフードコートも完備され、家族連れやカップル、学生など幅広い層が一日中楽しめる空間となっている。利便性の高い広大な駐車場も備え、日常の買い物から休日のお出かけまで多目的に利用できる名店として、地域で広く親しまれている。よくある、特に理由もないが向かうショッピングモールとなる。宮崎駅よりこっちの方が映画の種類が多い。学生のバイト先でもある。", 
+                exteriorImage: "images/30443_0.jpg", 
+                hours: "10:00～21:00", closed: "無休", phone: "0985-60-8000", mapLink: "https://maps.google.com/?cid=17748544496719118817&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [  "images/30444_0.jpg", "images/30445_0.jpg", "images/30446_0.jpg"  ]
+            },
+            { 
+                genre: "shop", name: "アミュプラザみやざき (宮崎駅)", area: "宮崎駅", 
+                comment: "宮崎中心のアミュ。", 
+                detailComment: "宮崎市老松に位置する「アミュプラザみやざき」は、宮崎駅に直結した大型商業施設だ。「海館」と「山館」から成る館内には、最新のファッションや雑貨、地元宮崎の特産品を扱う専門店が多数揃っている。シネマコンプレックスや屋上庭園も完備され、映画鑑賞から食事、展望まで一日中楽しめる空間が魅力だ。駅から徒歩圏内の利便性を活かし、日常の買い物から観光の拠点まで多目的に利用できる名店として、地域の人々や旅行者に広く親しまれている。飲み、バイトで向かう場所。時間もつぶせる。大学最寄り駅木花駅への終電が22時なのが腹立つ。増やせ。", 
+                exteriorImage: "images/30447_0.jpg", 
+                hours: "10:00～20:00", closed: "無休", phone: "0985-44-5111", mapLink: "https://maps.google.com/?cid=17666136045156172022&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30448_0.jpg", "images/30449_0.jpg","images/amu1.jpg","images/amu2.jpg","images/amu3.jpg"]
+            },
+
+            // ========== 観光名所 ==========
+            { 
+                genre: "sight", name: "橘通り", area: "橘通り", 
+                comment: "宮崎中心の飲み屋街", 
+                detailComment: "宮崎市中心部を南北に貫く「橘通り」は、宮崎県を代表するメインストリートであり、活気あふれる商業の中心地だ。通り沿いには百貨店やホテル、飲食店、オフィスビルが建ち並び、南国情緒漂うワシントンヤシが並ぶ景観が特徴となっている。西側には県内最大の歓楽街「ニシタチ」が広がり、夜まで多くの人々で賑わう。季節ごとのイベントや歩行者天国も開催され、ショッピングからグルメ、観光の拠点まで多目的に利用できる、宮崎のシンボル的な場所として親しまれている。宮大生は終電が22時までというクソみたいな都合により、二次会＝朝確定となる。便を増やせ。", 
+                exteriorImage: "images/30465_0.jpg", 
+                hours: "24時間散策自由", closed: "無休", phone: "なし", mapLink: "http://googleusercontent.com/maps.google.com/?q=橘通り",
+                images: [  "images/30466_0.jpg","images/30467_0.jpg", "images/30468_0.jpg" ]
+            },
+            { 
+                genre: "sight", name: "青島", area: "青島", 
+                comment: "宮崎観光のド定番。鬼の洗濯板と青島神社。", 
+                detailComment: "宮崎市南部に位置する「青島」は、周囲約1.5kmの小さな美しい島であり、宮崎を代表する観光名所だ。島全体が熱帯・亜熱帯植物に覆われ、周囲を「鬼の洗濯板」と呼ばれる波状の奇岩が囲む独特の景観が魅力となっている。島内には縁結びや安産、航海安全の利益で知られる青島神社が鎮座し、パワースポットとしても名高い。弥生橋を渡って気軽にアクセスでき、隣接する青島ビーチとともに、海水浴やサーフィン、散策を楽しめる名店のような存在として広く親しまれている。お土産にはういろうが有名。", 
+                exteriorImage: "images/30472_0.jpg", 
+                hours: "24時間散策自由", closed: "無休", phone: "0985-21-1791", mapLink: "https://maps.google.com/?cid=8025029780642595807&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30469_0.jpg", "images/30470_0.jpg", "images/30471_0.jpg","images/ao1.jpg","images/ao2.jpg" ]
+            },
+            { 
+                genre: "sight", name: "鵜戸神宮", area: "日南", 
+                comment: "海沿いの崖にある神社。運玉投げで運試し。", 
+                detailComment: "日南市の大海原に面した「鵜戸神宮」は、断崖の洞窟内に朱塗りの本殿が鎮座する、全国的にも珍しい景観を誇る名社だ。日向灘の荒波が打ち寄せる絶景とともに、縁結びや安産、海上安全の神様として古くから篤い信仰を集めている。参拝者が運玉を投げ、海上の亀石にあるくぼみに入れば願いが叶うとされる「運玉投げ」も人気。神秘的な雰囲気漂う洞窟と青い海のコントラストが美しく、宮崎を代表する観光の名所として広く親しまれている。運玉投げは女性が右手、男性が左手と男側が不利を背負うが左利きはハンデを負わない。", 
+                exteriorImage: "images/30474_0.jpg", 
+                hours: "6:00～18:00", closed: "無休", phone: "0987-29-1001", mapLink: "https://maps.google.com/?cid=9733940165167270939&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30475_0.jpg", "images/30476_0.jpg","images/30474_0.jpg","images/udo1.jpg","images/udo2.jpg" ]
+            },
+            { 
+                genre: "sight", name: "都井岬", area: "串間", 
+                comment: "野生の馬（御崎馬）がいる岬。宮崎の最南端。", 
+                detailComment: "串間市に位置する「都井岬」は、太平洋を望む絶景と野生の馬「御崎馬」で知られる宮崎県最南端の景観地だ。江戸時代から続く放牧の歴史を持ち、雄大な草原で馬たちがのんびりと過ごす姿を間近に観察できるのが最大の魅力。白亜の都井岬灯台からは、日向灘から種子島・屋久島まで見渡せるパノラマビューが広がり、まさに圧巻の美しさを誇る。手頃な価格で自然の驚異と歴史に触れられる名所として、県内外から多くの観光客に広く親しまれている。馬糞のレプリカを持って帰った変人がいるらしい。", 
+                exteriorImage: "images/30477_0.jpg", 
+                hours: "8:00～17:30", closed: "無休", phone: "0987-72-0479", mapLink: "https://maps.google.com/?cid=1358188798830439043&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/toi1.jpg","images/toi2.jpg","images/toi3.jpg","images/toi4.jpg","images/toi5.jpg", ]
+            },
+            { 
+                genre: "sight", name: "都農ワイナリー", area: "都農", 
+                comment: "丘の上にあるワイナリー。景色が綺麗。", 
+                detailComment: "児湯郡都農町の高台に位置する「都農ワイナリー」は、尾鈴連山と日向灘を一望できる絶景が魅力のワイナリーだ。地元産のブドウを100％使用し、独自の気候を活かしたワイン造りにこだわっている。世界的なワインコンテストでも高く評価される銘柄を多数揃え、ショップでは試飲や限定商品の購入も可能。広大な芝生広場やカフェも併設されており、ピクニック気分で一日中ゆっくり過ごせる。宮崎を代表する食と景観の名所として、多くの観光客やワイン愛好家に広く親しまれている。試飲が可能だが運転手は飲めないというジレンマ。おススメは、キャンベルアーリーにセブンの冷たいチキン南蛮と堅あげポテト。", 
+                exteriorImage: "images/tuno.jpg", 
+                hours: "9:30～17:00", closed: "無休", phone: "0983-25-5501", mapLink: "https://maps.google.com/?cid=5438705540389544025&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/tuno1.jpg", "images/tuno2.jpg", "images/tuno3.jpg", "images/tuno4.jpg", "images/tuno5.jpg", ]
+            },
+            { 
+                genre: "sight", name: "宮崎大学 木花キャンパス", area: "木花", 
+                comment: "妥協した者と、全力で頑張った者と敗北した者が集う", 
+                detailComment: "性格の悪い大人がいっぱい。立地もクソ。最寄り駅徒歩30分。", 
+                exteriorImage: "images/miyadai.jpg", 
+                hours: "要確認", closed: "要確認", phone: "0985-58-7111", mapLink: "https://maps.google.com/?cid=10330756100030934444&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ",
+                images: [ "images/30482_0.jpg", "images/30483_0.jpg", "images/30484_0.jpg", ]
+            }
+        ];
+
+        // --- ★ジャンル定義 ---
+        const foodGenres = [
+            { id: "udon", title: "俺はうどんをすするぞ！ズゾゾォォォーーッ！！" },
+            { id: "ramen", title: "あァァァんまりだァァアァ！宮崎のラーメンが美味すぎて涙が出るゥゥゥ！" },
+            { id: "teishoku", title: "あたしはこの空腹の海から解放される…！この定食で腹の虫をブチのめすッ！" },
+            { id: "survival", title: "宮大生の奇妙な日常 〜若者のお腹は満たせない〜" },
+            { id: "world", title: "『ミヤザキグルメ・ザ・ワールド）』ッ！" },
+            { id: "dessert", title: "ディ・モールトディ・モールト良いぞッ!至福のゴールド・エクスペリエンス" },
+            { id: "enkai", title: "いともたやすく行われるえげつない宴会" }
+        ];
+
+        const spotGenres = [
+            { id: "shop", title: "宮崎県民は動かない。宮崎県民　カイモノへ行く。 "},
+            { id: "play", title: "MIYAZAKI'S BIZARRE PLAYGROUND OVER HEAVEN" },
+            { id: "sight", title: "恥知らずの観光名所" }
+        ];
+
+        let currentPage = 'food';
+
+        function switchTab(page) {
+            currentPage = page;
+            const tabFood = document.getElementById('tab-food');
+            const tabSpot = document.getElementById('tab-spot');
+            
+            if(page === 'food') {
+                tabFood.classList.add('tab-active', 'text-white');
+                tabFood.classList.remove('text-orange-200');
+                tabSpot.classList.remove('tab-active', 'text-white');
+                tabSpot.classList.add('text-orange-200');
+            } else {
+                tabSpot.classList.add('tab-active', 'text-white');
+                tabSpot.classList.remove('text-orange-200');
+                tabFood.classList.remove('tab-active', 'text-white');
+                tabFood.classList.add('text-orange-200');
+            }
+            render();
+        }
+
+        function render() {
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML = '';
+            
+            const currentGenres = currentPage === 'food' ? foodGenres : spotGenres;
+            const currentData = currentPage === 'food' ? foodShops : spotShops;
+
+            currentGenres.forEach(g => {
+                const targetShops = currentData.filter(shop => shop.genre === g.id);
+                if(targetShops.length === 0) return;
+
+                const st = genreStyles[g.id];
+
+                const section = document.createElement('section');
+                section.className = "mb-16";
+                section.innerHTML = `
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-3 h-8 ${st.bar} rounded"></div>
+                        <h2 class="text-2xl font-bold text-gray-800">${g.title}</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="grid-${g.id}"></div>
+                `;
+                mainContent.appendChild(section);
+
+                const grid = document.getElementById(`grid-${g.id}`);
+                targetShops.forEach(shop => {
+                    const shopDataStr = JSON.stringify(shop).replace(/'/g, "\\'");
+                    const areaStyle = getAreaStyle(shop.area);
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden spot-card flex flex-col";
+                    card.setAttribute('onclick', `openModal('${shopDataStr}')`);
+                    
+                    let imageHtml = '';
+                    if (currentPage === 'food') {
+                        // 飲食編はスライドショー
+                        // （※最低5枚のimgタグを出力しないとCSSアニメーションが崩れるため、不足分は外観画像で補填する）
+                        const imgs = [];
+                        for (let i = 0; i < 5; i++) {
+                            imgs.push(shop.images[i] ? shop.images[i] : shop.exteriorImage);
+                        }
+                        imageHtml = `
+                            <div class="slideshow-container">
+                                <img src="${imgs[0]}">
+                                <img src="${imgs[1]}">
+                                <img src="${imgs[2]}">
+                                <img src="${imgs[3]}">
+                                <img src="${imgs[4]}">
+                                
+                            </div>
+                        `;
+                    } else {
+                        // スポット編は外観1枚のみ
+                        imageHtml = `
+                            <div class="static-container">
+                                <img src="${shop.exteriorImage}">
+                                
+                            </div>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        ${imageHtml}
+                        <div class="p-5 flex-grow flex flex-col">
+                            <div class="mb-3">
+                                <span class="${areaStyle} text-xs font-bold px-2 py-1 rounded border">${shop.area}</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">${shop.name}</h3>
+                            <p class="text-sm text-gray-600 comment-highlight mb-4 flex-grow">「${shop.comment}」</p>
+                            <div class="text-right mt-auto">
+                                <span class="text-blue-500 font-bold text-sm">詳細を見る ＞</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function openModal(shopDataStr) {
+            const shop = JSON.parse(shopDataStr);
+            const st = genreStyles[shop.genre];
+            
+            document.getElementById('modal-title').innerText = shop.name;
+            
+            const areaBadge = document.getElementById('modal-area');
+            areaBadge.innerText = shop.area;
+            areaBadge.className = `${getAreaStyle(shop.area)} text-sm font-semibold px-3 py-1 rounded border`;
+            
+            document.getElementById('modal-exterior').src = shop.exteriorImage;
+            document.getElementById('modal-comment').innerText = `「${shop.comment}」`;
+            document.getElementById('modal-detail-comment').innerText = shop.detailComment;
+            
+            // ★ モーダル内の画像を動的に生成（枚数分だけ表示）
+            const imagesContainer = document.getElementById('modal-images-container');
+            imagesContainer.innerHTML = ''; // 一度空にする
+            if (shop.images && shop.images.length > 0) {
+                shop.images.forEach(imgSrc => {
+                    const imgTag = document.createElement('img');
+                    imgTag.src = imgSrc;
+                    imgTag.className = "w-72 aspect-[4/3] object-cover rounded-lg snap-start shrink-0 border border-gray-200 shadow-sm";
+                    imagesContainer.appendChild(imgTag);
+                });
+            }
+
+            const singleInfo = document.getElementById('single-location-info');
+            const multiInfo = document.getElementById('multi-location-info');
+            
+            if (shop.locations && shop.locations.length > 0) {
+                singleInfo.classList.add('hidden');
+                multiInfo.classList.remove('hidden');
+                
+                let locationsHtml = '';
+                shop.locations.forEach(loc => {
+                    locationsHtml += `
+                        <div class="bg-white p-4 rounded border border-gray-200 shadow-sm">
+                            <h4 class="font-bold text-lg mb-2 text-gray-800 border-l-4 ${st.bar.replace('bg-', 'border-l-')} pl-2">${loc.name}</h4>
+                            <ul class="text-sm text-gray-700 space-y-1 mb-3">
+                                <li><strong>🕒 営業時間:</strong> ${loc.hours}</li>
+                                <li><strong>📅 定休日:</strong> ${loc.closed}</li>
+                            </ul>
+                            <a href="${loc.mapLink || `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(loc.mapQuery)}`}" target="_blank" class="inline-block w-full text-center bg-blue-500 text-white py-2 rounded font-bold hover:bg-blue-600 transition text-sm">
+                                MAPを開く
+                            </a>
+                        </div>
+                    `;
+                });
+                multiInfo.innerHTML = locationsHtml;
+                
+            } else {
+                singleInfo.classList.remove('hidden');
+                multiInfo.classList.add('hidden');
+                
+                document.getElementById('modal-hours').innerText = shop.hours;
+                document.getElementById('modal-closed').innerText = shop.closed;
+                document.getElementById('modal-phone').innerText = shop.phone || "要確認";
+                document.getElementById('modal-map-link').href = shop.mapLink;
+            }
+            
+            document.getElementById('spot-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('spot-modal').classList.add('hidden');
+        }
+
+        document.getElementById('spot-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // 初期表示を「飲食編」に設定
+        switchTab('food');
+    </script>
+</body>
+</html>
