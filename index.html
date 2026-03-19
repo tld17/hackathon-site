@@ -777,9 +777,9 @@
             document.getElementById('modal-comment').innerText = `「${shop.comment}」`;
             document.getElementById('modal-detail-comment').innerText = shop.detailComment;
             
-            // ★ モーダル内の画像を動的に生成（枚数分だけ表示）
+            // ★ モーダル内の画像を動的に生成
             const imagesContainer = document.getElementById('modal-images-container');
-            imagesContainer.innerHTML = ''; // 一度空にする
+            imagesContainer.innerHTML = ''; 
             if (shop.images && shop.images.length > 0) {
                 shop.images.forEach(imgSrc => {
                     const imgTag = document.createElement('img');
@@ -798,6 +798,10 @@
                 
                 let locationsHtml = '';
                 shop.locations.forEach(loc => {
+                    // ★ 複数店舗：正しいGoogleマップ検索URLを自動生成
+                    const mapQuery = encodeURIComponent(loc.mapQuery || loc.name);
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+                    
                     locationsHtml += `
                         <div class="bg-white p-4 rounded border border-gray-200 shadow-sm">
                             <h4 class="font-bold text-lg mb-2 text-gray-800 border-l-4 ${st.bar.replace('bg-', 'border-l-')} pl-2">${loc.name}</h4>
@@ -805,7 +809,7 @@
                                 <li><strong>🕒 営業時間:</strong> ${loc.hours}</li>
                                 <li><strong>📅 定休日:</strong> ${loc.closed}</li>
                             </ul>
-                            <a href="${loc.mapLink || `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(loc.mapQuery)}`}" target="_blank" class="inline-block w-full text-center bg-blue-500 text-white py-2 rounded font-bold hover:bg-blue-600 transition text-sm">
+                            <a href="${mapUrl}" target="_blank" class="inline-block w-full text-center bg-blue-500 text-white py-2 rounded font-bold hover:bg-blue-600 transition text-sm">
                                 MAPを開く
                             </a>
                         </div>
@@ -820,7 +824,10 @@
                 document.getElementById('modal-hours').innerText = shop.hours;
                 document.getElementById('modal-closed').innerText = shop.closed;
                 document.getElementById('modal-phone').innerText = shop.phone || "要確認";
-                document.getElementById('modal-map-link').href = shop.mapLink;
+                
+                // ★ 単独店舗：正しいGoogleマップ検索URLを自動生成（店舗名＋エリアで検索）
+                const mapQuery = encodeURIComponent(`${shop.name} ${shop.area}`);
+                document.getElementById('modal-map-link').href = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
             }
             
             document.getElementById('spot-modal').classList.remove('hidden');
